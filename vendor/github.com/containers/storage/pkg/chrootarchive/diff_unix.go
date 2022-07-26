@@ -1,4 +1,5 @@
-//+build !windows
+//go:build !windows && !darwin
+// +build !windows,!darwin
 
 package chrootarchive
 
@@ -35,6 +36,7 @@ func applyLayer() {
 	runtime.LockOSThread()
 	flag.Parse()
 
+	inUserns := userns.RunningInUserNS()
 	if err := chroot(flag.Arg(0)); err != nil {
 		fatal(err)
 	}
@@ -50,7 +52,9 @@ func applyLayer() {
 		fatal(err)
 	}
 
-	options.InUserNS = userns.RunningInUserNS()
+	if inUserns {
+		options.InUserNS = true
+	}
 
 	if tmpDir, err = ioutil.TempDir("/", "temp-storage-extract"); err != nil {
 		fatal(err)
@@ -65,7 +69,7 @@ func applyLayer() {
 
 	encoder := json.NewEncoder(os.Stdout)
 	if err := encoder.Encode(applyLayerResponse{size}); err != nil {
-		fatal(fmt.Errorf("unable to encode layerSize JSON: %s", err))
+		fatal(fmt.Errorf("unable to encode layerSize JSON: %w", err))
 	}
 
 	if _, err := flush(os.Stdin); err != nil {
@@ -91,7 +95,9 @@ func applyLayerHandler(dest string, layer io.Reader, options *archive.TarOptions
 	}
 	if options == nil {
 		options = &archive.TarOptions{}
-		options.InUserNS = userns.RunningInUserNS()
+		if userns.RunningInUserNS() {
+			options.InUserNS = true
+		}
 	}
 	if options.ExcludePatterns == nil {
 		options.ExcludePatterns = []string{}
@@ -99,7 +105,7 @@ func applyLayerHandler(dest string, layer io.Reader, options *archive.TarOptions
 
 	data, err := json.Marshal(options)
 	if err != nil {
-		return 0, fmt.Errorf("ApplyLayer json encode: %v", err)
+		return 0, fmt.Errorf("ApplyLayer json encode: %w", err)
 	}
 
 	cmd := reexec.Command("storage-applyLayer", dest)
@@ -110,14 +116,14 @@ func applyLayerHandler(dest string, layer io.Reader, options *archive.TarOptions
 	cmd.Stdout, cmd.Stderr = outBuf, errBuf
 
 	if err = cmd.Run(); err != nil {
-		return 0, fmt.Errorf("ApplyLayer %s stdout: %s stderr: %s", err, outBuf, errBuf)
+		return 0, fmt.Errorf("ApplyLayer stdout: %s stderr: %s %w", outBuf, errBuf, err)
 	}
 
 	// Stdout should be a valid JSON struct representing an applyLayerResponse.
 	response := applyLayerResponse{}
 	decoder := json.NewDecoder(outBuf)
 	if err = decoder.Decode(&response); err != nil {
-		return 0, fmt.Errorf("unable to decode ApplyLayer JSON response: %s", err)
+		return 0, fmt.Errorf("unable to decode ApplyLayer JSON response: %w", err)
 	}
 
 	return response.LayerSize, nil
