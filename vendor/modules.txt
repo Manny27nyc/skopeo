@@ -270,7 +270,7 @@ github.com/opencontainers/go-digest
 github.com/opencontainers/image-spec/schema
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
-# github.com/opencontainers/image-tools v0.0.0-20170926011501-6d941547fa1d
+# github.com/opencontainers/image-tools v1.0.0-rc3
 github.com/opencontainers/image-tools/image
 # github.com/opencontainers/runc v1.0.0
 github.com/opencontainers/runc/libcontainer/user
