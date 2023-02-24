@@ -12,7 +12,7 @@ require (
 	github.com/go-check/check v0.0.0-20180628173108-788fd7840127
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2-0.20190823105129-775207bd45b6
-	github.com/opencontainers/image-tools v0.0.0-20170926011501-6d941547fa1d
+	github.com/opencontainers/image-tools v1.0.0-rc3
 	github.com/pkg/errors v0.9.1
 	github.com/russross/blackfriday v2.0.0+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1
