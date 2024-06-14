@@ -15,10 +15,10 @@
 package schema
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"io"
-
-	"go4.org/errorutil"
 )
 
 // A SyntaxError is a description of a JSON syntax error
@@ -35,8 +35,23 @@ func (e *SyntaxError) Error() string { return e.msg }
 // and converts it into a *schema.SyntaxError containing line/col information using the given reader.
 // If the given error is not a *json.SyntaxError it is returned unchanged.
 func WrapSyntaxError(r io.Reader, err error) error {
-	if serr, ok := err.(*json.SyntaxError); ok {
-		line, col, _ := errorutil.HighlightBytePosition(r, serr.Offset)
+	var serr *json.SyntaxError
+	if errors.As(err, &serr) {
+		buf := bufio.NewReader(r)
+		line := 0
+		col := 0
+		for i := int64(0); i < serr.Offset; i++ {
+			b, berr := buf.ReadByte()
+			if berr != nil {
+				break
+			}
+			if b == '\n' {
+				line++
+				col = 1
+			} else {
+				col++
+			}
+		}
 		return &SyntaxError{serr.Error(), line, col, serr.Offset}
 	}
 
